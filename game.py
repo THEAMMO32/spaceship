@@ -295,17 +295,17 @@ class Game:
         x, y = self.ship.position
         
         # Ship body
-        pygame.draw.polygon(screen=self.screen, color=BLUE, 
-                          points=[(x, y - 20), (x - 25, y + 10), (x + 25, y + 10)])
+        pygame.draw.polygon(self.screen, BLUE, 
+                          [(x, y - 20), (x - 25, y + 10), (x + 25, y + 10)])
         
         # Cockpit
         pygame.draw.circle(self.screen, (100, 200, 255), (x, y - 5), 8)
         
         # Wings
-        pygame.draw.polygon(screen=self.screen, color=(0, 80, 200), 
-                          points=[(x - 25, y + 10), (x - 40, y + 20), (x - 25, y + 15)])
-        pygame.draw.polygon(screen=self.screen, color=(0, 80, 200), 
-                          points=[(x + 25, y + 10), (x + 40, y + 20), (x + 25, y + 15)])
+        pygame.draw.polygon(self.screen, (0, 80, 200), 
+                          [(x - 25, y + 10), (x - 40, y + 20), (x - 25, y + 15)])
+        pygame.draw.polygon(self.screen, (0, 80, 200), 
+                          [(x + 25, y + 10), (x + 40, y + 20), (x + 25, y + 15)])
         
         # Engines
         pygame.draw.rect(self.screen, RED, (x - 15, y + 10, 8, 8))
