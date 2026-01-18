@@ -218,6 +218,7 @@ class Game:
         self.fuel_consumption_timer = 0
         self.oxygen_consumption_timer = 0
         self.score = 0
+        self.game_over_reason = ""  # Причина окончания игры
         
         # Шрифты
         self.font = pygame.font.Font(None, 24)
@@ -371,6 +372,15 @@ class Game:
         
         # Проверка окончания игры
         if self.ship.hull_integrity <= 0:
+            self.game_over_reason = "Корпус разрушен!"
+            return False
+        
+        if self.ship.fuel <= 0:
+            self.game_over_reason = "Топливо закончилось!"
+            return False
+        
+        if self.ship.oxygen <= 0:
+            self.game_over_reason = "Кислород закончился!"
             return False
         
         return True
@@ -439,14 +449,17 @@ class Game:
         self.screen.blit(overlay, (0, 0))
         
         game_over_text = self.font.render("ИГРА ОКОНЧЕНА", True, RED)
+        reason_text = self.small_font.render(self.game_over_reason, True, ORANGE)
         score_text = self.small_font.render(f"Финальный счет: {self.score}", True, YELLOW)
         restart_text = self.small_font.render("Нажмите R для перезапуска", True, WHITE)
         
-        text_rect = game_over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 40))
-        score_rect = score_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
-        restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 40))
+        text_rect = game_over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 60))
+        reason_rect = reason_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 20))
+        score_rect = score_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 20))
+        restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 60))
         
         self.screen.blit(game_over_text, text_rect)
+        self.screen.blit(reason_text, reason_rect)
         self.screen.blit(score_text, score_rect)
         self.screen.blit(restart_text, restart_rect)
     
