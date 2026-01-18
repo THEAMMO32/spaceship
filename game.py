@@ -3,10 +3,10 @@ import random
 import sys
 from spaceship import SpaceShip, CrewMember, Mission, Role, MissionEvent
 
-# Initialize Pygame
+# Инициализация Pygame
 pygame.init()
 
-# Constants
+# Константы
 WIDTH, HEIGHT = 800, 600
 FPS = 60
 WHITE = (255, 255, 255)
@@ -19,7 +19,7 @@ ORANGE = (255, 165, 0)
 GRAY = (100, 100, 100)
 
 class Star:
-    """Background star particle."""
+    """Фоновая звездная частица."""
     def __init__(self):
         self.x = random.randint(0, WIDTH)
         self.y = random.randint(0, HEIGHT)
@@ -36,16 +36,16 @@ class Star:
         pygame.draw.circle(screen, WHITE, (int(self.x), int(self.y)), self.size)
 
 class Meteor:
-    """Meteor obstacle."""
+    """Метеорит - препятствие."""
     def __init__(self):
         self.size = random.choice([20, 30, 40, 50])
         self.x = random.randint(0, WIDTH - self.size)
         self.y = -self.size
         self.speed = random.randint(2, 5)
-        # Reduced health - now smaller meteors take 1-2 hits, larger ones 2-5 hits
+        # Уменьшенное здоровье - теперь маленькие метеориты уничтожаются за 1-2 попадания, большие за 2-5
         self.max_health = max(1, self.size // 20)
         self.health = self.max_health
-        self.hit_flash = 0  # Visual feedback when hit
+        self.hit_flash = 0  # Визуальная обратная связь при попадании
     
     def update(self):
         self.y += self.speed
@@ -53,11 +53,11 @@ class Meteor:
             self.hit_flash -= 1
     
     def draw(self, screen):
-        # Flash white when hit
+        # Вспышка белым при попадании
         if self.hit_flash > 0:
             color = (200, 200, 200)
         else:
-            # Color based on health - darker when damaged
+            # Цвет в зависимости от здоровья - темнеет при повреждении
             health_ratio = self.health / self.max_health
             gray_value = int(100 * health_ratio)
             color = (gray_value, gray_value, gray_value)
@@ -65,27 +65,27 @@ class Meteor:
         pygame.draw.circle(screen, color, (int(self.x + self.size // 2), int(self.y + self.size // 2)), self.size // 2)
         pygame.draw.circle(screen, (80, 80, 80), (int(self.x + self.size // 2), int(self.y + self.size // 2)), self.size // 2, 2)
         
-        # Draw health bar for larger meteors
+        # Отрисовка полоски здоровья для больших метеоритов
         if self.max_health > 1:
             bar_width = self.size
             bar_height = 4
             health_width = int(bar_width * (self.health / self.max_health))
-            # Background
+            # Фон
             pygame.draw.rect(screen, RED, (int(self.x), int(self.y - 8), bar_width, bar_height))
-            # Health
+            # Здоровье
             pygame.draw.rect(screen, GREEN, (int(self.x), int(self.y - 8), health_width, bar_height))
     
     def take_damage(self, damage=1):
-        """Damage the meteor and return True if destroyed."""
+        """Нанести урон метеориту и вернуть True, если уничтожен."""
         self.health -= damage
-        self.hit_flash = 5  # Flash for 5 frames
+        self.hit_flash = 5  # Вспышка на 5 кадров
         return self.health <= 0
     
     def is_off_screen(self):
         return self.y > HEIGHT
 
 class Rocket:
-    """Player rocket projectile."""
+    """Ракета игрока - снаряд."""
     def __init__(self, x, y, offset=0):
         self.x = x + offset
         self.y = y
@@ -104,7 +104,7 @@ class Rocket:
         return self.y < 0
 
 class Powerup:
-    """Power-up collectible."""
+    """Собираемый бонус."""
     def __init__(self, powerup_type):
         self.type = powerup_type  # 'fuel', 'health', 'oxygen'
         self.x = random.randint(20, WIDTH - 20)
@@ -124,16 +124,16 @@ class Powerup:
     
     def draw(self, screen):
         if self.type == 'fuel':
-            # Red barrel
+            # Красная бочка
             pygame.draw.rect(screen, self.color, (self.x - 10, self.y - 10, 20, 20))
             pygame.draw.rect(screen, (150, 0, 0), (self.x - 10, self.y - 10, 20, 20), 2)
         elif self.type == 'health':
-            # Green medkit
+            # Зеленая аптечка
             pygame.draw.rect(screen, self.color, (self.x - 10, self.y - 10, 20, 20))
             pygame.draw.rect(screen, WHITE, (self.x - 8, self.y - 2, 16, 4))
             pygame.draw.rect(screen, WHITE, (self.x - 2, self.y - 8, 4, 16))
         else:  # oxygen
-            # Blue tank
+            # Синий баллон
             pygame.draw.ellipse(screen, self.color, (self.x - 8, self.y - 12, 16, 24))
             pygame.draw.ellipse(screen, (0, 50, 200), (self.x - 8, self.y - 12, 16, 24), 2)
     
@@ -141,12 +141,12 @@ class Powerup:
         return self.y > HEIGHT
 
 class Explosion:
-    """Visual explosion effect when meteor is destroyed."""
+    """Визуальный эффект взрыва при уничтожении метеорита."""
     def __init__(self, x, y, size):
         self.x = x
         self.y = y
         self.particles = []
-        # Create particles
+        # Создание частиц
         for _ in range(int(size // 5)):
             angle = random.uniform(0, 2 * 3.14159)
             speed = random.uniform(1, 4)
@@ -170,14 +170,14 @@ class Explosion:
         for particle in self.particles:
             alpha = particle['life'] / 20
             color_value = int(255 * alpha)
-            color = (color_value, color_value // 2, 0)  # Orange/yellow
+            color = (color_value, color_value // 2, 0)  # Оранжевый/желтый
             pygame.draw.circle(screen, color, (int(particle['x']), int(particle['y'])), particle['size'])
     
     def is_finished(self):
         return len(self.particles) == 0
 
 class Game:
-    """Main game class."""
+    """Главный игровой класс."""
     def __init__(self):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Spaceship Simulator")
@@ -185,8 +185,8 @@ class Game:
         self.reset_game()
     
     def reset_game(self):
-        """Reset game state."""
-        # Create spaceship and crew
+        """Сброс состояния игры."""
+        # Создание корабля и экипажа
         self.ship = SpaceShip("Explorer-1")
         self.ship.position = [WIDTH // 2, HEIGHT - 80]
         
@@ -196,38 +196,38 @@ class Game:
             CrewMember("Taylor", Role.MEDIC, skills={'medicine': 80})
         ]
         
-        # Create mission
+        # Создание миссии
         self.mission = Mission(
-            "Deep Space Exploration",
-            ["Survive 5 minutes", "Collect resources", "Avoid asteroids"]
+            "Глубокий космос",
+            ["Выжить 5 минут", "Собрать ресурсы", "Избежать астероидов"]
         )
         
-        # Game objects
+        # Игровые объекты
         self.stars = [Star() for _ in range(100)]
         self.meteors = []
         self.rockets = []
         self.powerups = []
         self.explosions = []
         
-        # Game state
+        # Состояние игры
         self.meteor_spawn_timer = 0
         self.powerup_spawn_timer = 0
-        self.rocket_launcher_index = 0  # Alternate between launchers
+        self.rocket_launcher_index = 0  # Чередование пусковых установок
         self.current_event = None
         self.event_timer = 0
         self.fuel_consumption_timer = 0
         self.oxygen_consumption_timer = 0
         self.score = 0
         
-        # Font
+        # Шрифты
         self.font = pygame.font.Font(None, 24)
         self.small_font = pygame.font.Font(None, 20)
     
     def handle_input(self):
-        """Handle player input."""
+        """Обработка ввода игрока."""
         keys = pygame.key.get_pressed()
         
-        # Movement
+        # Движение
         if keys[pygame.K_LEFT] and self.ship.position[0] > 30:
             self.ship.position[0] -= 5
         if keys[pygame.K_RIGHT] and self.ship.position[0] < WIDTH - 30:
@@ -238,17 +238,17 @@ class Game:
             self.ship.position[1] += 5
     
     def spawn_meteor(self):
-        """Spawn a new meteor."""
+        """Создать новый метеорит."""
         self.meteors.append(Meteor())
     
     def spawn_powerup(self):
-        """Spawn a random powerup."""
+        """Создать случайный бонус."""
         powerup_type = random.choice(['fuel', 'health', 'oxygen'])
         self.powerups.append(Powerup(powerup_type))
     
     def shoot_rocket(self):
-        """Fire a rocket from alternating launchers."""
-        # Alternate between left and right launchers
+        """Выстрелить ракетой из чередующихся установок."""
+        # Чередование между левой и правой установками
         offsets = [-15, 15]
         offset = offsets[self.rocket_launcher_index]
         self.rocket_launcher_index = (self.rocket_launcher_index + 1) % 2
@@ -257,34 +257,34 @@ class Game:
         self.rockets.append(rocket)
     
     def check_collisions(self):
-        """Check for collisions between objects."""
+        """Проверка столкновений между объектами."""
         ship_rect = pygame.Rect(self.ship.position[0] - 25, self.ship.position[1] - 15, 50, 30)
         
-        # Rocket-meteor collisions
+        # Столкновения ракет с метеоритами
         for rocket in self.rockets[:]:
             rocket_rect = pygame.Rect(rocket.x, rocket.y, rocket.width, rocket.height)
             for meteor in self.meteors[:]:
                 meteor_rect = pygame.Rect(meteor.x, meteor.y, meteor.size, meteor.size)
                 if rocket_rect.colliderect(meteor_rect):
-                    # Remove rocket
+                    # Удалить ракету
                     if rocket in self.rockets:
                         self.rockets.remove(rocket)
                     
-                    # Damage meteor
+                    # Нанести урон метеориту
                     if meteor.take_damage(1):
-                        # Meteor destroyed
+                        # Метеорит уничтожен
                         if meteor in self.meteors:
-                            # Create explosion
+                            # Создать взрыв
                             self.explosions.append(Explosion(
                                 meteor.x + meteor.size // 2,
                                 meteor.y + meteor.size // 2,
                                 meteor.size
                             ))
                             self.meteors.remove(meteor)
-                            self.score += meteor.size  # Score based on meteor size
+                            self.score += meteor.size  # Очки в зависимости от размера метеорита
                     break
         
-        # Ship-meteor collisions
+        # Столкновения корабля с метеоритами
         for meteor in self.meteors[:]:
             meteor_rect = pygame.Rect(meteor.x, meteor.y, meteor.size, meteor.size)
             if ship_rect.colliderect(meteor_rect):
@@ -293,7 +293,7 @@ class Game:
                 if meteor in self.meteors:
                     self.meteors.remove(meteor)
         
-        # Ship-powerup collisions
+        # Столкновения корабля с бонусами
         for powerup in self.powerups[:]:
             powerup_rect = pygame.Rect(powerup.x - 10, powerup.y - 10, 20, 20)
             if ship_rect.colliderect(powerup_rect):
@@ -306,48 +306,48 @@ class Game:
                 self.powerups.remove(powerup)
     
     def update(self):
-        """Update game state."""
-        # Update stars
+        """Обновление состояния игры."""
+        # Обновление звезд
         for star in self.stars:
             star.update()
         
-        # Update meteors
+        # Обновление метеоритов
         for meteor in self.meteors[:]:
             meteor.update()
             if meteor.is_off_screen():
                 self.meteors.remove(meteor)
         
-        # Update rockets
+        # Обновление ракет
         for rocket in self.rockets[:]:
             rocket.update()
             if rocket.is_off_screen():
                 self.rockets.remove(rocket)
         
-        # Update powerups
+        # Обновление бонусов
         for powerup in self.powerups[:]:
             powerup.update()
             if powerup.is_off_screen():
                 self.powerups.remove(powerup)
         
-        # Update explosions
+        # Обновление взрывов
         for explosion in self.explosions[:]:
             explosion.update()
             if explosion.is_finished():
                 self.explosions.remove(explosion)
         
-        # Spawn meteors
+        # Появление метеоритов
         self.meteor_spawn_timer += 1
         if self.meteor_spawn_timer > random.randint(30, 60):
             self.spawn_meteor()
             self.meteor_spawn_timer = 0
         
-        # Spawn powerups
+        # Появление бонусов
         self.powerup_spawn_timer += 1
         if self.powerup_spawn_timer > random.randint(180, 300):
             self.spawn_powerup()
             self.powerup_spawn_timer = 0
         
-        # Consume resources
+        # Расход ресурсов
         self.fuel_consumption_timer += 1
         if self.fuel_consumption_timer > 60:
             self.ship.consume_fuel(0.5)
@@ -358,7 +358,7 @@ class Game:
             self.ship.consume_oxygen(1)
             self.oxygen_consumption_timer = 0
         
-        # Update mission and events
+        # Обновление миссии и событий
         self.event_timer += 1
         if self.event_timer > 300:
             event = self.mission.update()
@@ -366,81 +366,81 @@ class Game:
                 self.current_event = event
             self.event_timer = 0
         
-        # Check collisions
+        # Проверка столкновений
         self.check_collisions()
         
-        # Check game over
+        # Проверка окончания игры
         if self.ship.hull_integrity <= 0:
             return False
         
         return True
     
     def draw_ship(self):
-        """Draw the spaceship."""
+        """Отрисовка космического корабля."""
         x, y = self.ship.position
         
-        # Ship body
+        # Корпус корабля
         pygame.draw.polygon(self.screen, BLUE, 
                           [(x, y - 20), (x - 25, y + 10), (x + 25, y + 10)])
         
-        # Cockpit
+        # Кабина
         pygame.draw.circle(self.screen, (100, 200, 255), (x, y - 5), 8)
         
-        # Wings
+        # Крылья
         pygame.draw.polygon(self.screen, (0, 80, 200), 
                           [(x - 25, y + 10), (x - 40, y + 20), (x - 25, y + 15)])
         pygame.draw.polygon(self.screen, (0, 80, 200), 
                           [(x + 25, y + 10), (x + 40, y + 20), (x + 25, y + 15)])
         
-        # Engines
+        # Двигатели
         pygame.draw.rect(self.screen, RED, (x - 15, y + 10, 8, 8))
         pygame.draw.rect(self.screen, RED, (x + 7, y + 10, 8, 8))
         pygame.draw.rect(self.screen, ORANGE, (x - 15, y + 18, 8, 5))
         pygame.draw.rect(self.screen, ORANGE, (x + 7, y + 18, 8, 5))
     
     def draw_hud(self):
-        """Draw HUD elements."""
-        # Health bar
-        health_text = self.small_font.render(f"Hull: {int(self.ship.hull_integrity)}%", True, WHITE)
+        """Отрисовка элементов HUD."""
+        # Полоса здоровья
+        health_text = self.small_font.render(f"Корпус: {int(self.ship.hull_integrity)}%", True, WHITE)
         self.screen.blit(health_text, (10, 10))
         pygame.draw.rect(self.screen, RED, (10, 30, 200, 20), 2)
         pygame.draw.rect(self.screen, GREEN, (10, 30, int(200 * self.ship.hull_integrity / 100), 20))
         
-        # Fuel bar
-        fuel_text = self.small_font.render(f"Fuel: {int(self.ship.fuel)}%", True, WHITE)
+        # Полоса топлива
+        fuel_text = self.small_font.render(f"Топливо: {int(self.ship.fuel)}%", True, WHITE)
         self.screen.blit(fuel_text, (10, 55))
         pygame.draw.rect(self.screen, RED, (10, 75, 200, 20), 2)
         pygame.draw.rect(self.screen, YELLOW, (10, 75, int(200 * self.ship.fuel / 100), 20))
         
-        # Oxygen bar
-        oxygen_text = self.small_font.render(f"Oxygen: {int(self.ship.oxygen)}%", True, WHITE)
+        # Полоса кислорода
+        oxygen_text = self.small_font.render(f"Кислород: {int(self.ship.oxygen)}%", True, WHITE)
         self.screen.blit(oxygen_text, (10, 100))
         pygame.draw.rect(self.screen, RED, (10, 120, 200, 20), 2)
         pygame.draw.rect(self.screen, BLUE, (10, 120, int(200 * self.ship.oxygen / 100), 20))
         
-        # Score
-        score_text = self.small_font.render(f"Score: {self.score}", True, YELLOW)
+        # Счет
+        score_text = self.small_font.render(f"Счет: {self.score}", True, YELLOW)
         self.screen.blit(score_text, (10, 145))
         
-        # Current event
+        # Текущее событие
         if self.mission.active_events:
-            event_text = self.small_font.render(f"Event: {self.mission.active_events[-1].value}", True, RED)
+            event_text = self.small_font.render(f"Событие: {self.mission.active_events[-1].value}", True, RED)
             self.screen.blit(event_text, (WIDTH - 250, 10))
         
-        # Mission name
-        mission_text = self.small_font.render(f"Mission: {self.mission.name}", True, WHITE)
+        # Название миссии
+        mission_text = self.small_font.render(f"Миссия: {self.mission.name}", True, WHITE)
         self.screen.blit(mission_text, (WIDTH - 300, HEIGHT - 30))
     
     def draw_game_over(self):
-        """Draw game over screen."""
+        """Отрисовка экрана окончания игры."""
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.set_alpha(200)
         overlay.fill(BLACK)
         self.screen.blit(overlay, (0, 0))
         
-        game_over_text = self.font.render("GAME OVER", True, RED)
-        score_text = self.small_font.render(f"Final Score: {self.score}", True, YELLOW)
-        restart_text = self.small_font.render("Press R to Restart", True, WHITE)
+        game_over_text = self.font.render("ИГРА ОКОНЧЕНА", True, RED)
+        score_text = self.small_font.render(f"Финальный счет: {self.score}", True, YELLOW)
+        restart_text = self.small_font.render("Нажмите R для перезапуска", True, WHITE)
         
         text_rect = game_over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 40))
         score_rect = score_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
@@ -451,7 +451,7 @@ class Game:
         self.screen.blit(restart_text, restart_rect)
     
     def run(self):
-        """Main game loop."""
+        """Главный игровой цикл."""
         running = True
         game_active = True
         space_pressed = False
@@ -479,33 +479,33 @@ class Game:
                 self.handle_input()
                 game_active = self.update()
             
-            # Draw everything
+            # Отрисовка всего
             self.screen.fill(BLACK)
             
-            # Draw stars
+            # Отрисовка звезд
             for star in self.stars:
                 star.draw(self.screen)
             
-            # Draw explosions (behind meteors)
+            # Отрисовка взрывов (позади метеоритов)
             for explosion in self.explosions:
                 explosion.draw(self.screen)
             
-            # Draw meteors
+            # Отрисовка метеоритов
             for meteor in self.meteors:
                 meteor.draw(self.screen)
             
-            # Draw powerups
+            # Отрисовка бонусов
             for powerup in self.powerups:
                 powerup.draw(self.screen)
             
-            # Draw rockets
+            # Отрисовка ракет
             for rocket in self.rockets:
                 rocket.draw(self.screen)
             
-            # Draw ship
+            # Отрисовка корабля
             self.draw_ship()
             
-            # Draw HUD
+            # Отрисовка HUD
             self.draw_hud()
             
             if not game_active:

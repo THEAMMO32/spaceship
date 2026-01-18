@@ -9,7 +9,7 @@ class Role(Enum):
     NAVIGATOR = "Navigator"
 
 class CrewMember:
-    """Represents a crew member with health, skills, and role."""
+    """Представляет члена экипажа со здоровьем, навыками и ролью."""
     
     def __init__(self, name, role, health=100, skills=None):
         self.name = name
@@ -19,21 +19,21 @@ class CrewMember:
         self.max_health = 100
     
     def take_damage(self, damage):
-        """Reduce crew member's health."""
+        """Уменьшить здоровье члена экипажа."""
         self.health = max(0, self.health - damage)
         return self.health > 0
     
     def heal(self, amount):
-        """Restore crew member's health."""
+        """Восстановить здоровье члена экипажа."""
         self.health = min(self.max_health, self.health + amount)
     
     def get_status(self):
-        """Return current status of crew member."""
-        status = "Healthy" if self.health > 70 else "Injured" if self.health > 30 else "Critical"
-        return f"{self.name} ({self.role.value}) - Health: {self.health}% - {status}"
+        """Вернуть текущий статус члена экипажа."""
+        status = "Здоров" if self.health > 70 else "Ранен" if self.health > 30 else "Критическое состояние"
+        return f"{self.name} ({self.role.value}) - Здоровье: {self.health}% - {status}"
 
 class SpaceShip:
-    """Represents a spaceship with fuel, hull integrity, and speed management."""
+    """Представляет космический корабль с управлением топливом, целостностью корпуса и скоростью."""
     
     def __init__(self, name, fuel=100, hull_integrity=100, speed=0):
         self.name = name
@@ -45,42 +45,42 @@ class SpaceShip:
         self.max_speed = 100
         self.oxygen = 100
         self.max_oxygen = 100
-        self.position = [400, 300]  # x, y coordinates
+        self.position = [400, 300]  # координаты x, y
     
     def consume_fuel(self, amount):
-        """Consume fuel for movement."""
+        """Расходовать топливо для движения."""
         if self.fuel >= amount:
             self.fuel -= amount
             return True
         return False
     
     def refuel(self, amount):
-        """Add fuel to the ship."""
+        """Добавить топливо в корабль."""
         self.fuel = min(self.max_fuel, self.fuel + amount)
     
     def take_damage(self, damage):
-        """Reduce hull integrity."""
+        """Уменьшить целостность корпуса."""
         self.hull_integrity = max(0, self.hull_integrity - damage)
         return self.hull_integrity > 0
     
     def repair(self, amount):
-        """Repair hull damage."""
+        """Починить повреждения корпуса."""
         self.hull_integrity = min(self.max_hull, self.hull_integrity + amount)
     
     def consume_oxygen(self, amount):
-        """Consume oxygen over time."""
+        """Расходовать кислород со временем."""
         self.oxygen = max(0, self.oxygen - amount)
     
     def refill_oxygen(self, amount):
-        """Refill oxygen tanks."""
+        """Пополнить баки с кислородом."""
         self.oxygen = min(self.max_oxygen, self.oxygen + amount)
     
     def accelerate(self, delta):
-        """Change ship speed."""
+        """Изменить скорость корабля."""
         self.speed = max(0, min(self.max_speed, self.speed + delta))
     
     def get_status(self):
-        """Return ship's current status."""
+        """Вернуть текущий статус корабля."""
         return {
             'fuel': self.fuel,
             'hull': self.hull_integrity,
@@ -89,16 +89,16 @@ class SpaceShip:
         }
 
 class MissionEvent(Enum):
-    ASTEROID_FIELD = "Asteroid Field"
-    METEOR_SHOWER = "Meteor Shower"
-    SOLAR_FLARE = "Solar Flare"
-    FUEL_SHORTAGE = "Fuel Shortage"
-    OXYGEN_LEAK = "Oxygen Leak"
-    SYSTEM_MALFUNCTION = "System Malfunction"
-    FRIENDLY_ENCOUNTER = "Friendly Encounter"
+    ASTEROID_FIELD = "Астероидное поле"
+    METEOR_SHOWER = "Метеоритный дождь"
+    SOLAR_FLARE = "Солнечная вспышка"
+    FUEL_SHORTAGE = "Нехватка топлива"
+    OXYGEN_LEAK = "Утечка кислорода"
+    SYSTEM_MALFUNCTION = "Сбой системы"
+    FRIENDLY_ENCOUNTER = "Дружественная встреча"
 
 class Mission:
-    """Represents a mission with objectives, resources, and random events."""
+    """Представляет миссию с целями, ресурсами и случайными событиями."""
     
     def __init__(self, name, objectives, resources=None):
         self.name = name
@@ -109,30 +109,30 @@ class Mission:
         self.mission_time = 0
     
     def trigger_random_event(self):
-        """Generate a random mission event."""
-        if random.random() < 0.3:  # 30% chance
+        """Сгенерировать случайное событие миссии."""
+        if random.random() < 0.3:  # 30% шанс
             event = random.choice(list(MissionEvent))
             self.active_events.append(event)
             return event
         return None
     
     def resolve_event(self, event):
-        """Remove an event from active events."""
+        """Удалить событие из активных событий."""
         if event in self.active_events:
             self.active_events.remove(event)
     
     def complete_objective(self, objective):
-        """Mark an objective as completed."""
+        """Отметить цель как выполненную."""
         if objective in self.objectives and objective not in self.completed_objectives:
             self.completed_objectives.append(objective)
             return True
         return False
     
     def is_completed(self):
-        """Check if all objectives are completed."""
+        """Проверить, все ли цели выполнены."""
         return len(self.completed_objectives) == len(self.objectives)
     
     def update(self):
-        """Update mission state."""
+        """Обновить состояние миссии."""
         self.mission_time += 1
         return self.trigger_random_event()
