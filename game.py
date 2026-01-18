@@ -16,6 +16,7 @@ GREEN = (0, 255, 0)
 BLUE = (0, 100, 255)
 YELLOW = (255, 255, 0)
 ORANGE = (255, 165, 0)
+GRAY = (100, 100, 100)
 
 class Star:
     """Background star particle."""
@@ -41,15 +42,44 @@ class Meteor:
         self.x = random.randint(0, WIDTH - self.size)
         self.y = -self.size
         self.speed = random.randint(2, 5)
-        self.health = self.size // 10
+        # Reduced health - now smaller meteors take 1-2 hits, larger ones 2-5 hits
+        self.max_health = max(1, self.size // 20)
+        self.health = self.max_health
+        self.hit_flash = 0  # Visual feedback when hit
     
     def update(self):
         self.y += self.speed
+        if self.hit_flash > 0:
+            self.hit_flash -= 1
     
     def draw(self, screen):
-        color = (100, 100, 100)
+        # Flash white when hit
+        if self.hit_flash > 0:
+            color = (200, 200, 200)
+        else:
+            # Color based on health - darker when damaged
+            health_ratio = self.health / self.max_health
+            gray_value = int(100 * health_ratio)
+            color = (gray_value, gray_value, gray_value)
+        
         pygame.draw.circle(screen, color, (int(self.x + self.size // 2), int(self.y + self.size // 2)), self.size // 2)
         pygame.draw.circle(screen, (80, 80, 80), (int(self.x + self.size // 2), int(self.y + self.size // 2)), self.size // 2, 2)
+        
+        # Draw health bar for larger meteors
+        if self.max_health > 1:
+            bar_width = self.size
+            bar_height = 4
+            health_width = int(bar_width * (self.health / self.max_health))
+            # Background
+            pygame.draw.rect(screen, RED, (int(self.x), int(self.y - 8), bar_width, bar_height))
+            # Health
+            pygame.draw.rect(screen, GREEN, (int(self.x), int(self.y - 8), health_width, bar_height))
+    
+    def take_damage(self, damage=1):
+        """Damage the meteor and return True if destroyed."""
+        self.health -= damage
+        self.hit_flash = 5  # Flash for 5 frames
+        return self.health <= 0
     
     def is_off_screen(self):
         return self.y > HEIGHT
@@ -110,6 +140,42 @@ class Powerup:
     def is_off_screen(self):
         return self.y > HEIGHT
 
+class Explosion:
+    """Visual explosion effect when meteor is destroyed."""
+    def __init__(self, x, y, size):
+        self.x = x
+        self.y = y
+        self.particles = []
+        # Create particles
+        for _ in range(int(size // 5)):
+            angle = random.uniform(0, 2 * 3.14159)
+            speed = random.uniform(1, 4)
+            self.particles.append({
+                'x': x,
+                'y': y,
+                'vx': speed * (random.random() - 0.5) * 2,
+                'vy': speed * (random.random() - 0.5) * 2,
+                'life': 20,
+                'size': random.randint(2, 4)
+            })
+    
+    def update(self):
+        for particle in self.particles:
+            particle['x'] += particle['vx']
+            particle['y'] += particle['vy']
+            particle['life'] -= 1
+        self.particles = [p for p in self.particles if p['life'] > 0]
+    
+    def draw(self, screen):
+        for particle in self.particles:
+            alpha = particle['life'] / 20
+            color_value = int(255 * alpha)
+            color = (color_value, color_value // 2, 0)  # Orange/yellow
+            pygame.draw.circle(screen, color, (int(particle['x']), int(particle['y'])), particle['size'])
+    
+    def is_finished(self):
+        return len(self.particles) == 0
+
 class Game:
     """Main game class."""
     def __init__(self):
@@ -141,6 +207,7 @@ class Game:
         self.meteors = []
         self.rockets = []
         self.powerups = []
+        self.explosions = []
         
         # Game state
         self.meteor_spawn_timer = 0
@@ -150,6 +217,7 @@ class Game:
         self.event_timer = 0
         self.fuel_consumption_timer = 0
         self.oxygen_consumption_timer = 0
+        self.score = 0
         
         # Font
         self.font = pygame.font.Font(None, 24)
@@ -198,11 +266,22 @@ class Game:
             for meteor in self.meteors[:]:
                 meteor_rect = pygame.Rect(meteor.x, meteor.y, meteor.size, meteor.size)
                 if rocket_rect.colliderect(meteor_rect):
+                    # Remove rocket
                     if rocket in self.rockets:
                         self.rockets.remove(rocket)
-                    meteor.health -= 1
-                    if meteor.health <= 0 and meteor in self.meteors:
-                        self.meteors.remove(meteor)
+                    
+                    # Damage meteor
+                    if meteor.take_damage(1):
+                        # Meteor destroyed
+                        if meteor in self.meteors:
+                            # Create explosion
+                            self.explosions.append(Explosion(
+                                meteor.x + meteor.size // 2,
+                                meteor.y + meteor.size // 2,
+                                meteor.size
+                            ))
+                            self.meteors.remove(meteor)
+                            self.score += meteor.size  # Score based on meteor size
                     break
         
         # Ship-meteor collisions
@@ -249,6 +328,12 @@ class Game:
             powerup.update()
             if powerup.is_off_screen():
                 self.powerups.remove(powerup)
+        
+        # Update explosions
+        for explosion in self.explosions[:]:
+            explosion.update()
+            if explosion.is_finished():
+                self.explosions.remove(explosion)
         
         # Spawn meteors
         self.meteor_spawn_timer += 1
@@ -333,6 +418,10 @@ class Game:
         pygame.draw.rect(self.screen, RED, (10, 120, 200, 20), 2)
         pygame.draw.rect(self.screen, BLUE, (10, 120, int(200 * self.ship.oxygen / 100), 20))
         
+        # Score
+        score_text = self.small_font.render(f"Score: {self.score}", True, YELLOW)
+        self.screen.blit(score_text, (10, 145))
+        
         # Current event
         if self.mission.active_events:
             event_text = self.small_font.render(f"Event: {self.mission.active_events[-1].value}", True, RED)
@@ -350,12 +439,15 @@ class Game:
         self.screen.blit(overlay, (0, 0))
         
         game_over_text = self.font.render("GAME OVER", True, RED)
+        score_text = self.small_font.render(f"Final Score: {self.score}", True, YELLOW)
         restart_text = self.small_font.render("Press R to Restart", True, WHITE)
         
-        text_rect = game_over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 20))
-        restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 20))
+        text_rect = game_over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 40))
+        score_rect = score_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 40))
         
         self.screen.blit(game_over_text, text_rect)
+        self.screen.blit(score_text, score_rect)
         self.screen.blit(restart_text, restart_rect)
     
     def run(self):
@@ -393,6 +485,10 @@ class Game:
             # Draw stars
             for star in self.stars:
                 star.draw(self.screen)
+            
+            # Draw explosions (behind meteors)
+            for explosion in self.explosions:
+                explosion.draw(self.screen)
             
             # Draw meteors
             for meteor in self.meteors:
